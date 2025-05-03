@@ -1,3 +1,4 @@
+import os
 import xml.etree.ElementTree as ET
 import uuid
 from collections import defaultdict
@@ -16,25 +17,15 @@ EDGES = [
 ]
 
 
-# Allowed edge types
-EDGES = [
-    "ERmandOne",
-    "ERmany",
-    "ERone",
-    "ERoneToMany",
-    "ERzeroToMany",
-    "ERzeroToOne",
-]
-
-
 class CreateDrawio:
     def __init__(self):
-        pass
+        self.output_dir = "output"
+        self.input_dir = "input"
 
-    def import_file(self, path_file_name: str):
-        self.path_file_name = path_file_name
+    def import_file(self, file_name: str):
+        self.path_file_name = os.path.join(self.input_dir, file_name)
         self.tables, self.references, self.positions = self._parse_dsl_file(
-            path_file_name
+            self.path_file_name
         )
 
     ## Parse DSL FILE
@@ -118,8 +109,8 @@ class CreateDrawio:
                     "column_name": src_col,
                     "table_reference": tgt_table,
                     "column_reference": tgt_col,
-                    "start_arrow": start_arrow or "ERone",
-                    "end_arrow": end_arrow or "ERone",
+                    "start_arrow": start_arrow or "",
+                    "end_arrow": end_arrow or "",
                 }
             )
             self._add_foreign_key(src_table, src_col, tables)
@@ -188,7 +179,7 @@ class CreateDrawio:
     ) -> Tuple[ET.Element, int]:
         table_id = table_name
         max_col_len = max(len(name) for name, _ in columns)
-        width = max(base_width, 30 + max_col_len * 9)
+        width = max(base_width, 30 + max_col_len * 9, 30 + len(table_name) * 8)
 
         style_str = self._dict_to_style_string(
             {
@@ -377,37 +368,6 @@ class CreateDrawio:
 
         return ";".join(f"{camel_case(k)}={v}" for k, v in style_dict.items()) + ";"
 
-    def write_mxgraph(self, file_name: str = "output.drawio") -> None:
-        """Writes the XML tree to a file."""
-        graph_model = ET.Element(
-            "mxGraphModel",
-            {
-                "dx": "3247",
-                "dy": "533",
-                "grid": "0",
-                "gridSize": "10",
-                "guides": "1",
-                "tooltips": "1",
-                "connect": "1",
-                "arrows": "1",
-                "fold": "1",
-                "page": "1",
-                "pageScale": "1",
-                "pageWidth": "850",
-                "pageHeight": "1100",
-                "math": "0",
-                "shadow": "0",
-            },
-        )
-
-        root = self._create_erd_xml()
-        root = self._create_edges(root)
-        # add_title_root = add_title(erd_with_edges, "ERD Star HR Diagram")
-        graph_model.append(root)
-        ET.ElementTree(graph_model).write(
-            file_name, encoding="utf-8", xml_declaration=True
-        )
-
     # ADD EDGE
     def _add_edge(
         self,
@@ -433,7 +393,7 @@ class CreateDrawio:
             raise ValueError(
                 f"Invalid start_arrow '{start_arrow}'. Allowed: {EDGES} or blank."
             )
-        if end_arrow not in EDGES:
+        if end_arrow and end_arrow not in EDGES:
             raise ValueError(f"Invalid end_arrow '{end_arrow}'.")
 
         edge = ET.SubElement(
@@ -533,3 +493,35 @@ class CreateDrawio:
             },
         )
         return root
+
+    def write_mxgraph(self, file_name: str = "output.drawio") -> None:
+        """Writes the XML tree to a file."""
+        graph_model = ET.Element(
+            "mxGraphModel",
+            {
+                "dx": "3247",
+                "dy": "533",
+                "grid": "0",
+                "gridSize": "10",
+                "guides": "1",
+                "tooltips": "1",
+                "connect": "1",
+                "arrows": "1",
+                "fold": "1",
+                "page": "1",
+                "pageScale": "1",
+                "pageWidth": "850",
+                "pageHeight": "1100",
+                "math": "0",
+                "shadow": "0",
+            },
+        )
+        os.makedirs(self.output_dir, exist_ok=True)
+        path_file_name = os.path.join(self.output_dir, file_name)
+        root = self._create_erd_xml()
+        root = self._create_edges(root)
+        # add_title_root = add_title(erd_with_edges, "ERD Star HR Diagram")
+        graph_model.append(root)
+        ET.ElementTree(graph_model).write(
+            path_file_name, encoding="utf-8", xml_declaration=True
+        )
