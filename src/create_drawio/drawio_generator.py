@@ -5,6 +5,9 @@ from collections import defaultdict
 from typing import Dict, List, Tuple
 import re
 from typing import Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Allowed edge types
 EDGES = [
@@ -116,7 +119,7 @@ class CreateDrawio:
             self._add_foreign_key(src_table, src_col, tables)
             self._add_foreign_key(tgt_table, tgt_col, tables)
         else:
-            print(f"Warning: line could not be parsed → {line}")
+            logger.warning(f"line could not be parsed → {line}")
 
     def _add_foreign_key(self, table_name, column_name, tables):
         # Check if OPPORTUNITY_ID exists in reference_list
@@ -138,7 +141,7 @@ class CreateDrawio:
             src_table, x, y = match.groups()
             positions[src_table] = (x, y)
         else:
-            print(f"Warning: line could not be parsed → {line}")
+            logger.warning(f"Warning: line could not be parsed → {line}")
 
     # Create XML
     def _create_id(self) -> str:
