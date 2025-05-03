@@ -56,7 +56,11 @@ class CreateDrawio:
                     # positions[current_table] = pos
                 elif current_table:
                     self._parse_column_line(line, current_table, tables)
-
+        # Remove keys with empty lists
+        keys_to_remove = [key for key, value in tables.items() if not value]
+        for key in keys_to_remove:
+            del tables[key]
+            print(f"Warning: Removed Table {keys_to_remove} because without columns")
         return tables, references, positions
 
     def _is_table_line(self, line: str) -> bool:
@@ -434,7 +438,7 @@ class CreateDrawio:
             return f"{table_name}-{idx}"
         except ValueError as err:
             raise ValueError(
-                f"Column '{column_name}' not found in table '{table_name}'."
+                f"Column '{column_name}' not found in table '{table_name} or {table_name} doesn't exist'."
             ) from err
 
     def _create_edges(self, root: ET.Element) -> ET.Element:
