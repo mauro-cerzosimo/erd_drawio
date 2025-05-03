@@ -33,7 +33,7 @@ poetry install
 Create a `.env` file in the project root with the following content:
 
 ```env
-INPUT_FILE_NAME_PATH="input/orders.dsl"
+INPUT_FILE_NAME_PATH="orders.dsl"
 OUTPUT_FILE_NAME="orders.drawio"
 ```
 
@@ -62,35 +62,23 @@ The `.dsl` file defines your data model and should follow these conventions:
 * **Tables**
 
   ```dsl
-  TABLE FACT_ORDERS {
+ TABLE FACT_ORDERS {
       ORDER_ID PK
       PRODUCT_ID
       CUSTOMER_ID
-  }
-
-  TABLE DIM_PRODUCTS {
-      PRODUCT_ID PK
-      PRODUCT_NAME
-
-  }
-    
-  TABLE DIM_CUSTOMERS {
-      CUSTOMER_ID PK
-      CUSTOMER_NAME
   }
   ```
 
 * **References / relationships**
 
   ```dsl
-  REFERENCE FACT_ORDERS.PRODUCT_ID -> DIM_ORDERS.PRODUCT_ID
-  REFERENCE FACT_ORDERS.CUSTOMER_ID -> DIM_CUSTOMERS.CUSTOMER_ID [ERmany, ERone]
+ REFERENCE FACT_ORDERS.PRODUCT_ID -> DIM_PRODUCTS.PRODUCT_ID
+ REFERENCE DIM_CUSTOMERS.CUSTOMER_ID -> FACT_ORDERS.CUSTOMER_ID [ERmany, ERone]
   ```
 
 * **Arrangement (x, y) positions on the canvas**
 
   ```dsl
-  ARRANGE FACT_ORDERS (30, 200)
   ARRANGE DIM_PRODUCTS (50, 400)
   ```
 
@@ -113,6 +101,7 @@ Example snippet:
  TABLE FACT_ORDERS {
       ORDER_ID PK
       PRODUCT_ID
+      CUSTOMER_ID
   }
 
  TABLE DIM_PRODUCTS {
@@ -125,8 +114,8 @@ Example snippet:
       CUSTOMER_NAME
   }
 
- REFERENCE DIM_ORDERS.PRODUCT_ID -> DIM_ORDERS.PRODUCT_ID
- REFERENCE FACT_ORDERS.CUSTOMER_ID -> DIM_CUSTOMERS.CUSTOMER_ID [ERmany, ERone]
+ REFERENCE FACT_ORDERS.PRODUCT_ID -> DIM_PRODUCTS.PRODUCT_ID
+ REFERENCE DIM_CUSTOMERS.CUSTOMER_ID -> FACT_ORDERS.CUSTOMER_ID [ERmany, ERone]
 
  ARRANGE DIM_ORDERS (30, 200)
  ARRANGE DIM_PRODUCTS (50, 400)
