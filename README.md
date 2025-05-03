@@ -33,8 +33,8 @@ poetry install
 Create a `.env` file in the project root with the following content:
 
 ```env
-INPUT_FILE_NAME_PATH="input/hiring.dsl"
-OUTPUT_FILE_NAME="hiring.drawio"
+INPUT_FILE_NAME_PATH="input/orders.dsl"
+OUTPUT_FILE_NAME="orders.drawio"
 ```
 
 ---
