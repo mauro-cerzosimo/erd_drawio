@@ -33,7 +33,7 @@ poetry install
 Create a `.env` file in the project root with the following content:
 
 ```env
-INPUT_FILE_NAME_PATH="input/orders.dsl"
+INPUT_FILE_NAME_PATH="orders.dsl"
 OUTPUT_FILE_NAME="orders.drawio"
 ```
 
@@ -169,6 +169,9 @@ watch:
 		--recursive \
 		--command='poetry run python run_generator.py' \
 		input/
+  
+arrange:
+	poetry run python run_table_locator.py
 
 lint:
 	poetry run ruff check .
@@ -209,4 +212,9 @@ format:
 
   ```bash
   make format
+  ```
+* **Run typecheck checks**
+
+  ```bash
+  make typecheck
   ```

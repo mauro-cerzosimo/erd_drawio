@@ -6,6 +6,7 @@ watch:
 		--recursive \
 		--command='poetry run python run_generator.py' \
 		input/
+		
 arrange:
 	poetry run python run_table_locator.py
 
