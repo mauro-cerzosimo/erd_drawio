@@ -78,9 +78,9 @@ The `.dsl` file defines your data model and should follow these conventions:
   ```
 
 * **Tables**
-* Use `*` before the column name for primary keys (PK)
+* Use `*` after the column name for primary keys (PK)
 
-* Use `+` before the column name for foreign keys (FK)
+* Use `+` after the column name for foreign keys (FK)
 
 * Use no symbol for regular columns
 
