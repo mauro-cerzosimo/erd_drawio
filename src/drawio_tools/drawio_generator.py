@@ -133,9 +133,10 @@ class DrawioGenerator:
         current_table: str,
         tables: Dict[str, List[Tuple[str, str]]],
     ):
-        if m := re.match(r"^\*\s*(\w+)", line):
+        if m := re.match(r"^(\w+)\s*\*$", line):
+            print("primary", line)
             self._add_primary_key(m, current_table, tables)
-        elif m := re.match(r"^\+\s*(\w+)", line):
+        elif m := re.match(r"^(\w+)\s*\+$", line):
             self._add_foreign_key(m, current_table, tables)
         elif m := re.match(r"^(\w+)$", line):
             self._add_regular_column(m, current_table, tables)
