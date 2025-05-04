@@ -6,6 +6,18 @@ from typing import Dict, List, Tuple
 import re
 from typing import Optional
 import logging
+from datetime import date
+from src.drawio_tools.styles import (
+    TABLE_DATE_COL_STYLE,
+    TABLE_DATE_ROW_STYLE,
+    TABLE_DATE_STYLE,
+    TABLE_STYLE,
+    TITLE_STYLE,
+    ICON_CELL_STYLE,
+    COLUMN_CEL_STYLE,
+    EDGE_STYLE,
+    ROW_STYLE,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +32,14 @@ EDGES = [
 ]
 
 
-class CreateDrawio:
+class DrawioGenerator:
     def __init__(self):
         self.output_dir = "output"
         self.input_dir = "input"
 
     def import_file(self, file_name: str):
         self.path_file_name = os.path.join(self.input_dir, file_name)
-        self.tables, self.references, self.positions = self._parse_dsl_file(
+        self.tables, self.references, self.positions, self.title, self.created_at_string = self._parse_dsl_file(
             self.path_file_name
         )
 
@@ -40,6 +52,8 @@ class CreateDrawio:
         tables = defaultdict(list)
         references = defaultdict(list)
         positions = {}
+        title = None
+        created_at = None
 
         current_table = None
 
@@ -54,17 +68,26 @@ class CreateDrawio:
                     self._parse_reference_line(line, tables, references)
                 elif self._is_position_line(line):
                     self._parse_positions(line, positions, tables)
-                if self._is_table_line(line):
+                elif self._is_title_line(line):
+                    title = self._parse_title(line)
+                elif self._is_create_date(line):
+                    created_at = self._parse_create_date(line)
+                elif self._is_table_line(line):
                     current_table = self._parse_table_line(line)
-                    # positions[current_table] = pos
                 elif current_table:
                     self._parse_column_line(line, current_table, tables)
         # Remove keys with empty lists
         keys_to_remove = [key for key, value in tables.items() if not value]
         for key in keys_to_remove:
             del tables[key]
-            print(f"Warning: Removed Table {keys_to_remove} because without columns")
-        return tables, references, positions
+            logger.warning(f"Removed Table {keys_to_remove} because without columns")
+        return tables, references, positions, title, created_at
+    
+    def _is_title_line(self,line):
+        return line.startswith("TITLE")
+    
+    def _is_create_date(self,line):
+        return line.startswith("CREATEDAT")
 
     def _is_table_line(self, line: str) -> bool:
         return line.startswith("TABLE")
@@ -74,6 +97,24 @@ class CreateDrawio:
 
     def _is_position_line(self, line: str) -> bool:
         return line.startswith("ARRANGE")
+    
+    def _parse_title(self, line):
+        match = re.match(r"TITLE\s+(.*)", line)
+        if match:
+            title_name = match.group(1).strip()
+            return title_name
+        else:
+            logger.warning("No TITLE found in line")
+            return None
+    
+    def _parse_create_date(self, line):
+        match = re.match(r"CREATEDAT\s+(.*)", line)
+        if match:
+            created_at = match.group(1).strip()
+            return created_at
+        else:
+            logger.warning("No CREATEDAT found in line")
+            return None
 
     def _parse_table_line(
         self, line: str
@@ -159,10 +200,25 @@ class CreateDrawio:
         ET.SubElement(root, "mxCell", id="1", parent="0")
         return root
 
+    def _create_mxcell(self, root, id, value, style, parent, vertex, geom_attrs):
+        """Helper to create mxCell with geometry."""
+        cell = ET.SubElement(
+            root,
+            "mxCell",
+            {
+                "id": id,
+                "value": value,
+                "style": style,
+                "vertex": vertex,
+                "parent": parent,
+            },
+        )
+        ET.SubElement(cell, "mxGeometry", geom_attrs)
+
     def _create_erd_xml(self) -> ET.Element:
         """Generates the ERD XML structure from tables."""
         root = self._create_root()
-        x_offset = 0
+        x_offset = 1
         for table_name, columns in self.tables.items():
             if table_name in self.positions:
                 x, y = self.positions[table_name]
@@ -188,33 +244,13 @@ class CreateDrawio:
         max_col_len = max(len(name) for name, _ in columns)
         width = max(base_width, 30 + max_col_len * 9, 30 + len(table_name) * 8)
 
-        style_str = self._dict_to_style_string(
-            {
-                "shape": "table",
-                "startSize": "30",
-                "container": "1",
-                "collapsible": "1",
-                "childLayout": "tableLayout",
-                "rounded": "1",
-                "arcSize": "6",
-                "fixedRows": "1",
-                "rowLines": "0",
-                "fontStyle": "0",
-                "align": "center",
-                "resizeLast": "1",
-                "resizeParent": "1",
-                "fillColor": "#F4AC9F",
-                "strokeColor": "default",
-            }
-        )
-
         table_cell = ET.SubElement(
             root,
             "mxCell",
             {
                 "id": table_id,
                 "value": table_name,
-                "style": style_str,
+                "style": self._dict_to_style_string(TABLE_STYLE),
                 "vertex": "1",
                 "parent": "1",
             },
@@ -253,21 +289,10 @@ class CreateDrawio:
     def _create_row(
         self, root, row_id, parent_id, fill_color, key, width, height, y_offset
     ):
-        style_row = self._dict_to_style_string(
+        row_style = ROW_STYLE.copy()
+        row_style.update(
             {
-                "shape": "tableRow",
-                "horizontal": "0",
-                "startSize": "0",
-                "swimlaneHead": "0",
-                "swimlaneBody": "0",
                 "fillColor": fill_color,
-                "collapsible": "0",
-                "dropTarget": "0",
-                "portConstraint": "eastwest",
-                "strokeColor": "inherit",
-                "top": "0",
-                "left": "0",
-                "right": "0",
                 "bottom": "1" if key == "PK" else "0",
             }
         )
@@ -277,7 +302,7 @@ class CreateDrawio:
             {
                 "id": row_id,
                 "value": "",
-                "style": style_row,
+                "style": self._dict_to_style_string(row_style),
                 "vertex": "1",
                 "parent": parent_id,
             },
@@ -295,20 +320,8 @@ class CreateDrawio:
 
     def _create_icon_cell(self, root, icon_id, parent_id, key, height):
 
-        style_icon = self._dict_to_style_string(
-            {
-                "shape": "partialRectangle",
-                "overflow": "hidden",
-                "connectable": "0",
-                "fillColor": "none",
-                "strokeColor": "inherit",
-                "top": "0",
-                "left": "0",
-                "bottom": "0",
-                "right": "0",
-                "fontStyle": "1" if key == "PK" else "",
-            }
-        )
+        icon_cell_style = ICON_CELL_STYLE.copy()
+        icon_cell_style["fontStyle"] = "1" if key == "PK" else ""
 
         ET.SubElement(
             root,
@@ -316,7 +329,7 @@ class CreateDrawio:
             {
                 "id": icon_id,
                 "value": key,
-                "style": style_icon,
+                "style": self._dict_to_style_string(icon_cell_style),
                 "vertex": "1",
                 "parent": parent_id,
             },
@@ -329,22 +342,8 @@ class CreateDrawio:
     def _create_column_cell(
         self, root, col_id, parent_id, col_name, key, width, height
     ):
-        style_column = self._dict_to_style_string(
-            {
-                "shape": "partialRectangle",
-                "overflow": "hidden",
-                "connectable": "0",
-                "fillColor": "none",
-                "align": "left",
-                "strokeColor": "inherit",
-                "top": "0",
-                "left": "0",
-                "bottom": "0",
-                "right": "0",
-                "spacingLeft": "6",
-                "fontStyle": "5" if key == "PK" else "",
-            }
-        )
+        column_cell_style = COLUMN_CEL_STYLE.copy()
+        column_cell_style["fontStyle"] = "5" if key == "PK" else ""
 
         ET.SubElement(
             root,
@@ -352,7 +351,7 @@ class CreateDrawio:
             {
                 "id": col_id,
                 "value": col_name,
-                "style": style_column,
+                "style": self._dict_to_style_string(column_cell_style),
                 "vertex": "1",
                 "parent": parent_id,
             },
@@ -387,15 +386,10 @@ class CreateDrawio:
     ) -> ET.Element:
         """Adds an edge between two columns."""
 
-        style_edge = self._dict_to_style_string(
-            {
-                "edgeStyle": "entityRelationEdgeStyle",
-                "fontSize": "12",
-                "html": "1",
-                "endArrow": end_arrow,
-                "startArrow": start_arrow,
-            }
-        )
+        edge_style = EDGE_STYLE.copy()
+        edge_style["endArrow"] = end_arrow
+        edge_style["startArrow"] = start_arrow
+
         if start_arrow and start_arrow not in EDGES:
             raise ValueError(
                 f"Invalid start_arrow '{start_arrow}'. Allowed: {EDGES} or blank."
@@ -409,7 +403,7 @@ class CreateDrawio:
             {
                 "id": edge_id,
                 "value": "",
-                "style": style_edge,
+                "style": self._dict_to_style_string(edge_style),
                 "edge": "1",
                 "parent": "1",
                 "source": source_id,
@@ -464,41 +458,88 @@ class CreateDrawio:
         return root
 
     # ADD TITLE
-    def add_title(self, root: ET.Element, title: str):
-        style_title = self._dict_to_style_string(
-            {
-                "shape": "text",
-                "strokeColor": "none",
-                "fillColor": "none",
-                "html": "1",
-                "fontSize": "63",
-                "fontStyle": "1",
-                "verticalAlign": "middle",
-                "align": "left",
-            }
-        )
-        row = ET.SubElement(
+
+    def _add_title(self, root: ET.Element):
+
+        self._create_mxcell(
             root,
-            "mxCell",
-            {
-                "id": "title",
-                "value": title,
-                "style": style_title,
-                "vertex": "1",
-                "parent": "1",
-            },
-        )
-        ET.SubElement(
-            row,
-            "mxGeometry",
-            {
-                "x": str(100),
-                "y": str(20),
-                "width": str(len(title * 25)),
-                "height": str(40),
+            id="title",
+            value=self.title,
+            style=self._dict_to_style_string(TITLE_STYLE),
+            parent="1",
+            vertex="1",
+            geom_attrs={
+                "x": "186",
+                "y": "10",
+                "width": "125",
+                "height": "40",
                 "as": "geometry",
             },
         )
+        return root
+
+    # ADD Date
+    def _add_date(self, root):
+        self._create_mxcell(
+            root,
+            id="table-date",
+            value="",
+            style=self._dict_to_style_string(TABLE_DATE_STYLE),
+            parent="1",
+            vertex="1",
+            geom_attrs={
+                "x": "1",
+                "y": "6",
+                "width": "175.75",
+                "height": "48",
+                "as": "geometry",
+            },
+        )
+
+        for r in range(2):
+            self._create_mxcell(
+                root,
+                id=f"table-date-{r}",
+                value="",
+                style=self._dict_to_style_string(TABLE_DATE_ROW_STYLE),
+                parent="table-date",
+                vertex="1",
+                geom_attrs={
+                    "width": "175.75",
+                    "height": "24",
+                    "as": "geometry",
+                    **({"y": "24"} if r == 1 else {}),
+                },
+            )
+
+            for c in range(2):
+                if c == 0:
+                    geo = {"width": "82"}
+                    align = "right"
+                else:
+                    geo = {"x": "82", "width": "94"}
+                    align = "left"
+                if r == 0 and c == 0:
+                    cell_value = "CreatedAt:"
+                elif r == 0 and c == 1:
+                    cell_value = self.created_at_string
+                elif r == 1 and c == 0:
+                    cell_value = "UpdatedAt:"
+                elif r == 1 and c == 1:
+                    cell_value = date.today().isoformat()
+
+                self._create_mxcell(
+                    root,
+                    id=f"table-date-{r}-{c}",
+                    value=cell_value,
+                    style=self._dict_to_style_string(
+                        {**TABLE_DATE_COL_STYLE, "align": align}
+                    ),
+                    parent=f"table-date-{r}",
+                    vertex="1",
+                    geom_attrs={"height": "24", "as": "geometry", **geo},
+                )
+
         return root
 
     def write_mxgraph(self, file_name: str = "output.drawio") -> None:
@@ -527,7 +568,10 @@ class CreateDrawio:
         path_file_name = os.path.join(self.output_dir, file_name)
         root = self._create_erd_xml()
         root = self._create_edges(root)
-        # add_title_root = add_title(erd_with_edges, "ERD Star HR Diagram")
+        if self.title:
+            root = self._add_title(root)
+        if self.created_at_string:
+            root = self._add_date(root)
         graph_model.append(root)
         ET.ElementTree(graph_model).write(
             path_file_name, encoding="utf-8", xml_declaration=True

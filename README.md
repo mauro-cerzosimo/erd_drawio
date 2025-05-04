@@ -59,6 +59,17 @@ input/orders.dsl
 
 The `.dsl` file defines your data model and should follow these conventions:
 
+* **Title**
+
+  ```dsl
+  TITLE Order Erd Diagram
+  ```
+
+* **Create At**
+  ```dsl
+  CREATEDAT 2025-05-01
+  ```
+
 * **Tables**
 
   ```dsl
@@ -108,6 +119,9 @@ The `.dsl` file defines your data model and should follow these conventions:
 Example snippet:
 
 ```dsl
+TITLE Order Erd Diagram
+CREATEDAT 2025-05-01
+
 TABLE FACT_ORDERS {
     ORDER_ID PK
     PRODUCT_ID
@@ -153,7 +167,7 @@ watch:
 	poetry run watchmedo shell-command \
 		--patterns="*.dsl" \
 		--recursive \
-		--command='poetry run python run.py' \
+		--command='poetry run python run_generator.py' \
 		input/
 
 lint:
@@ -178,6 +192,11 @@ format:
   ```python
   from dotenv import load_dotenv
   load_dotenv()
+  ```
+
+* **Print Arrange coordinates**
+  ```bash
+  make arrange
   ```
 
 * **Run lint checks**
