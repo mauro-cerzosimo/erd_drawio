@@ -172,11 +172,10 @@ Add this `Makefile` to your project root:
 .PHONY: watch lint format
 
 watch:
-	poetry run watchmedo shell-command \
-		--patterns="*.dsl" \
-		--recursive \
-		--command='poetry run python run_generator.py' \
-		input/
+	poetry run python watcher.py
+
+drawio:
+  poetry run python run_generator.py
   
 arrange:
 	poetry run python run_table_locator.py
@@ -203,6 +202,11 @@ format:
   ```python
   from dotenv import load_dotenv
   load_dotenv()
+  ```
+
+* **Generate Drawio**
+  ```bash
+  make drawio
   ```
 
 * **Print Arrange coordinates**

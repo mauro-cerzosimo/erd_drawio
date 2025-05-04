@@ -1,11 +1,10 @@
 .PHONY: watch lint format
 
 watch:
-	poetry run watchmedo shell-command \
-		--patterns="*.dsl" \
-		--recursive \
-		--command='poetry run python run_generator.py' \
-		input/
+	poetry run python watcher.py
+
+drawio:
+  	poetry run python run_generator.py
 		
 arrange:
 	poetry run python run_table_locator.py
