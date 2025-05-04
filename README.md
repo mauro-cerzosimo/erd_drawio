@@ -1,5 +1,12 @@
 # ERD Drawio
 
+## 📊 Example ERD Diagram
+
+![Order ERD Diagram](docs/erd_diagram.drawio.svg)
+
+---
+
+
 ## ⚙️ Setup environment and install Poetry
 
 1. **Create a Python virtual environment**
@@ -140,8 +147,9 @@ TABLE DIM_CUSTOMERS {
 REFERENCE FACT_ORDERS.PRODUCT_ID -> DIM_PRODUCTS.PRODUCT_ID
 REFERENCE FACT_ORDERS.CUSTOMER_ID -> DIM_CUSTOMERS.CUSTOMER_ID [ERmany, ERone]
 
-ARRANGE FACT_ORDERS (30, 200)
-ARRANGE DIM_PRODUCTS (50, 400)
+ARRANGE FACT_ORDERS (409, 154)
+ARRANGE DIM_PRODUCTS (112, 149)
+ARRANGE DIM_CUSTOMERS (108, 316)
 ```
 
 ---
