@@ -133,14 +133,20 @@ class DrawioGenerator:
         current_table: str,
         tables: Dict[str, List[Tuple[str, str]]],
     ):
-        if m := re.match(r"^(\w+)\s+PK$", line):
+        if m := re.match(r"^\*\s*(\w+)", line):
             self._add_primary_key(m, current_table, tables)
+        elif m := re.match(r"^\+\s*(\w+)", line):
+            self._add_foreign_key(m, current_table, tables)
         elif m := re.match(r"^(\w+)$", line):
             self._add_regular_column(m, current_table, tables)
 
     def _add_primary_key(self, match, table: str, tables):
         col = match.group(1)
         tables[table].append((col, "PK"))
+
+    def _add_foreign_key(self, match, table: str, tables):
+        col = match.group(1)
+        tables[table].append((col, "FK"))
 
     def _add_regular_column(self, match, table: str, tables):
         col = match.group(1)
@@ -165,12 +171,12 @@ class DrawioGenerator:
                     "end_arrow": end_arrow or "",
                 }
             )
-            self._add_foreign_key(src_table, src_col, tables)
-            self._add_foreign_key(tgt_table, tgt_col, tables)
+            self._add_reference_foreign_key(src_table, src_col, tables)
+            self._add_reference_foreign_key(tgt_table, tgt_col, tables)
         else:
             logger.warning(f"line could not be parsed → {line}")
 
-    def _add_foreign_key(self, table_name, column_name, tables):
+    def _add_reference_foreign_key(self, table_name, column_name, tables):
         # Check if OPPORTUNITY_ID exists in reference_list
 
         has_column = any(col == column_name for col, _ in tables[table_name])
@@ -182,6 +188,11 @@ class DrawioGenerator:
                 for col, key in tables[table_name]
             ]
             tables[table_name] = updated_list
+        else:
+            raise ValueError(
+                f"Column '{column_name}' not found in table '{table_name} or {table_name} doesn't exist'."
+            )
+
 
     def _parse_positions(self, line, positions, tables):
         positions_re = re.compile(r"^ARRANGE (\w+)\s*\(\s*(\d+),\s*(\d+)\s*\)$")

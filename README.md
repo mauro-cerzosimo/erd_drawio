@@ -78,21 +78,26 @@ The `.dsl` file defines your data model and should follow these conventions:
   ```
 
 * **Tables**
+* Use `*` before the column name for primary keys (PK)
+
+* Use `+` before the column name for foreign keys (FK)
+
+* Use no symbol for regular columns
 
   ```dsl
   TABLE FACT_ORDERS {
-      ORDER_ID PK
-      PRODUCT_ID
+      *ORDER_ID
+      +PRODUCT_ID
       CUSTOMER_ID
   }
 
   TABLE DIM_PRODUCTS {
-      PRODUCT_ID PK
+      *PRODUCT_ID
       PRODUCT_NAME
   }
 
   TABLE DIM_CUSTOMERS {
-      CUSTOMER_ID PK
+      *CUSTOMER_ID
       CUSTOMER_NAME
   }
   ```
@@ -130,17 +135,18 @@ TITLE Order Erd Diagram
 CREATEDAT 2025-05-01
 
 TABLE FACT_ORDERS {
-    ORDER_ID PK
-    PRODUCT_ID
+    *ORDER_ID
+    +PRODUCT_ID
+    CUSTOMER_ID
 }
 
 TABLE DIM_PRODUCTS {
-    PRODUCT_ID PK
+    *PRODUCT_ID
     PRODUCT_NAME
 }
 
 TABLE DIM_CUSTOMERS {
-    CUSTOMER_ID PK
+    *CUSTOMER_ID
     CUSTOMER_NAME
 }
 
