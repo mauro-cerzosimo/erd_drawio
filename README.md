@@ -181,7 +181,7 @@ watch:
 	poetry run python watcher.py
 
 drawio:
-  poetry run python run_generator.py
+	poetry run python run_generator.py
   
 arrange:
 	poetry run python run_table_locator.py
