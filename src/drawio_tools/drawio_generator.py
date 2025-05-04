@@ -39,9 +39,13 @@ class DrawioGenerator:
 
     def import_file(self, file_name: str):
         self.path_file_name = os.path.join(self.input_dir, file_name)
-        self.tables, self.references, self.positions, self.title, self.created_at_string = self._parse_dsl_file(
-            self.path_file_name
-        )
+        (
+            self.tables,
+            self.references,
+            self.positions,
+            self.title,
+            self.created_at_string,
+        ) = self._parse_dsl_file(self.path_file_name)
 
     ## Parse DSL FILE
     def _parse_dsl_file(self, path_file_name: str) -> Tuple[
@@ -82,11 +86,11 @@ class DrawioGenerator:
             del tables[key]
             logger.warning(f"Removed Table {keys_to_remove} because without columns")
         return tables, references, positions, title, created_at
-    
-    def _is_title_line(self,line):
+
+    def _is_title_line(self, line):
         return line.startswith("TITLE")
-    
-    def _is_create_date(self,line):
+
+    def _is_create_date(self, line):
         return line.startswith("CREATEDAT")
 
     def _is_table_line(self, line: str) -> bool:
@@ -97,7 +101,7 @@ class DrawioGenerator:
 
     def _is_position_line(self, line: str) -> bool:
         return line.startswith("ARRANGE")
-    
+
     def _parse_title(self, line):
         match = re.match(r"TITLE\s+(.*)", line)
         if match:
@@ -106,7 +110,7 @@ class DrawioGenerator:
         else:
             logger.warning("No TITLE found in line")
             return None
-    
+
     def _parse_create_date(self, line):
         match = re.match(r"CREATEDAT\s+(.*)", line)
         if match:
@@ -244,21 +248,14 @@ class DrawioGenerator:
         max_col_len = max(len(name) for name, _ in columns)
         width = max(base_width, 30 + max_col_len * 9, 30 + len(table_name) * 8)
 
-        table_cell = ET.SubElement(
+        self._create_mxcell(
             root,
-            "mxCell",
-            {
-                "id": table_id,
-                "value": table_name,
-                "style": self._dict_to_style_string(TABLE_STYLE),
-                "vertex": "1",
-                "parent": "1",
-            },
-        )
-        ET.SubElement(
-            table_cell,
-            "mxGeometry",
-            {
+            id=table_id,
+            value=table_name,
+            style=self._dict_to_style_string(TABLE_STYLE),
+            parent=str(1),
+            vertex=str(1),
+            geom_attrs={
                 "x": str(x),
                 "y": str(y),
                 "width": str(width),
@@ -290,27 +287,22 @@ class DrawioGenerator:
         self, root, row_id, parent_id, fill_color, key, width, height, y_offset
     ):
         row_style = ROW_STYLE.copy()
+
         row_style.update(
             {
                 "fillColor": fill_color,
                 "bottom": "1" if key == "PK" else "0",
             }
         )
-        row = ET.SubElement(
+
+        self._create_mxcell(
             root,
-            "mxCell",
-            {
-                "id": row_id,
-                "value": "",
-                "style": self._dict_to_style_string(row_style),
-                "vertex": "1",
-                "parent": parent_id,
-            },
-        )
-        ET.SubElement(
-            row,
-            "mxGeometry",
-            {
+            id=row_id,
+            value="",
+            style=self._dict_to_style_string(row_style),
+            parent=parent_id,
+            vertex=str(1),
+            geom_attrs={
                 "y": str(y_offset),
                 "width": str(width),
                 "height": str(height),
@@ -323,20 +315,14 @@ class DrawioGenerator:
         icon_cell_style = ICON_CELL_STYLE.copy()
         icon_cell_style["fontStyle"] = "1" if key == "PK" else ""
 
-        ET.SubElement(
+        self._create_mxcell(
             root,
-            "mxCell",
-            {
-                "id": icon_id,
-                "value": key,
-                "style": self._dict_to_style_string(icon_cell_style),
-                "vertex": "1",
-                "parent": parent_id,
-            },
-        ).append(
-            ET.Element(
-                "mxGeometry", {"width": "30", "height": str(height), "as": "geometry"}
-            )
+            id=icon_id,
+            value=key,
+            style=self._dict_to_style_string(icon_cell_style),
+            parent=parent_id,
+            vertex=str(1),
+            geom_attrs={"width": "30", "height": str(height), "as": "geometry"},
         )
 
     def _create_column_cell(
@@ -345,26 +331,19 @@ class DrawioGenerator:
         column_cell_style = COLUMN_CEL_STYLE.copy()
         column_cell_style["fontStyle"] = "5" if key == "PK" else ""
 
-        ET.SubElement(
+        self._create_mxcell(
             root,
-            "mxCell",
-            {
-                "id": col_id,
-                "value": col_name,
-                "style": self._dict_to_style_string(column_cell_style),
-                "vertex": "1",
-                "parent": parent_id,
+            id=col_id,
+            value=col_name,
+            style=self._dict_to_style_string(column_cell_style),
+            parent=parent_id,
+            vertex=str(1),
+            geom_attrs={
+                "x": "30",
+                "width": str(width - 30),
+                "height": str(height),
+                "as": "geometry",
             },
-        ).append(
-            ET.Element(
-                "mxGeometry",
-                {
-                    "x": "30",
-                    "width": str(width - 30),
-                    "height": str(height),
-                    "as": "geometry",
-                },
-            )
         )
 
     def _dict_to_style_string(self, style_dict: Dict[str, str]) -> str:
