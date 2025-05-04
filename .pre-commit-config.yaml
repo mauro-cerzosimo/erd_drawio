@@ -9,3 +9,8 @@ repos:
     rev: 24.4.0  # Replace with latest black version
     hooks:
       - id: black
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0  # check for the latest version on GitHub
+    hooks:
+      - id: mypy
