@@ -35,17 +35,15 @@ EDGES = [
 class DrawioGenerator:
     def __init__(self):
         self.output_dir = "output"
-        self.input_dir = "input"
 
-    def import_file(self, file_name: str):
-        self.path_file_name = os.path.join(self.input_dir, file_name)
+    def import_file(self, path_file_name: str):
         (
             self.tables,
             self.references,
             self.positions,
             self.title,
             self.created_at_string,
-        ) = self._parse_dsl_file(self.path_file_name)
+        ) = self._parse_dsl_file(path_file_name)
 
     ## Parse DSL FILE
     def _parse_dsl_file(self, path_file_name: str) -> Tuple[
@@ -78,6 +76,7 @@ class DrawioGenerator:
                     created_at = self._parse_create_date(line)
                 elif self._is_table_line(line):
                     current_table = self._parse_table_line(line)
+                
                 elif current_table:
                     self._parse_column_line(line, current_table, tables)
         # Remove keys with empty lists
@@ -134,7 +133,6 @@ class DrawioGenerator:
         tables: Dict[str, List[Tuple[str, str]]],
     ):
         if m := re.match(r"^(\w+)\s*\*$", line):
-            print("primary", line)
             self._add_primary_key(m, current_table, tables)
         elif m := re.match(r"^(\w+)\s*\+$", line):
             self._add_foreign_key(m, current_table, tables)
