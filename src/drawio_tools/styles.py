@@ -12,7 +12,6 @@ TABLE_STYLE = {
     "align": "center",
     "resizeLast": "1",
     "resizeParent": "1",
-    "fillColor": "#F4AC9F",
     "strokeColor": "default",
 }
 

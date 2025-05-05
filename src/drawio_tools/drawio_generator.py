@@ -175,7 +175,7 @@ class DrawioGenerator:
             self._add_reference_foreign_key(src_table, src_col, tables)
             self._add_reference_foreign_key(tgt_table, tgt_col, tables)
         else:
-            logger.warning(f"line could not be parsed → {line}")
+            raise ValueError(f"line could not be parsed → {line}")
 
     def _add_reference_foreign_key(self, table_name, column_name, tables):
         # Check if OPPORTUNITY_ID exists in reference_list
@@ -202,7 +202,7 @@ class DrawioGenerator:
             src_table, x, y = match.groups()
             positions[src_table] = (x, y)
         else:
-            logger.warning(f"Warning: line could not be parsed → {line}")
+            raise ValueError(f"Warning: line could not be parsed → {line}")
 
     # Create XML
     def _create_id(self) -> str:
@@ -231,9 +231,8 @@ class DrawioGenerator:
         )
         ET.SubElement(cell, "mxGeometry", geom_attrs)
 
-    def _create_erd_xml(self) -> ET.Element:
+    def _create_erd_xml(self, root) -> ET.Element:
         """Generates the ERD XML structure from tables."""
-        root = self._create_root()
         x_offset = 1
         for table_name, columns in self.tables.items():
             if table_name in self.positions:
@@ -260,11 +259,17 @@ class DrawioGenerator:
         max_col_len = max(len(name) for name, _ in columns)
         width = max(base_width, 30 + max_col_len * 9, 30 + len(table_name) * 8)
 
+        table_style = TABLE_STYLE.copy()
+        if table_name.startswith("FACT"):
+            table_style["fillColor"] = "#F4AC9F"
+        else:
+            table_style["fillColor"] = "#9CD6EF"
+
         self._create_mxcell(
             root,
             id=table_id,
             value=table_name,
-            style=self._dict_to_style_string(TABLE_STYLE),
+            style=self._dict_to_style_string(table_style),
             parent=str(1),
             vertex=str(1),
             geom_attrs={
@@ -557,8 +562,9 @@ class DrawioGenerator:
         )
         os.makedirs(self.output_dir, exist_ok=True)
         path_file_name = os.path.join(self.output_dir, file_name)
-        root = self._create_erd_xml()
+        root = self._create_root()
         root = self._create_edges(root)
+        root = self._create_erd_xml(root)
         if self.title:
             root = self._add_title(root)
         if self.created_at_string:

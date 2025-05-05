@@ -3,6 +3,7 @@ import logging
 from dotenv import load_dotenv
 from src.drawio_tools.drawio_generator import DrawioGenerator
 
+load_dotenv()
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
@@ -12,7 +13,7 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     logging.info("Loading environment variables...")
-    load_dotenv()
+    
 
     path_file_name = os.environ.get("INPUT_FILE_NAME_PATH")
     output_file_name = os.environ.get("OUTPUT_FILE_NAME")
