@@ -97,7 +97,7 @@ The `.dsl` file defines your data model and should follow these conventions:
   }
 
   TABLE DIM_CUSTOMERS {
-      *CUSTOMER_ID
+      CUSTOMER_ID *
       CUSTOMER_NAME
   }
   ```
