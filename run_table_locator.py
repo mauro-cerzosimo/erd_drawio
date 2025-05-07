@@ -1,7 +1,7 @@
 import os
 import logging
 from dotenv import load_dotenv
-from src.drawio_tools.drawio_table_locator import DrawioTableLocator
+from drawio_tools.drawio_table_locator import DrawioTableLocator
 
 load_dotenv()
 # Configure logging
@@ -11,7 +11,7 @@ logging.basicConfig(
 )
 
 if __name__ == "__main__":
-    
+
     drawio_file = os.environ.get("OUTPUT_FILE_NAME")
 
     if not drawio_file:

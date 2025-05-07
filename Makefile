@@ -22,4 +22,4 @@ format:
 
 # Run mypy type checking
 typecheck:
-	poetry run mypy .
+	poetry run mypy src

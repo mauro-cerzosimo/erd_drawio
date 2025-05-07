@@ -7,7 +7,7 @@ import re
 from typing import Optional
 import logging
 from datetime import date
-from src.drawio_tools.styles import (
+from drawio_tools.styles import (
     TABLE_DATE_COL_STYLE,
     TABLE_DATE_ROW_STYLE,
     TABLE_DATE_STYLE,
@@ -33,7 +33,7 @@ EDGES = [
 
 
 class DrawioGenerator:
-    def __init__(self):
+    def __init__(self) -> None:
         self.output_dir = "output"
         self.table_sizes = defaultdict(dict)
 
@@ -77,7 +77,7 @@ class DrawioGenerator:
                     created_at = self._parse_create_date(line)
                 elif self._is_table_line(line):
                     current_table = self._parse_table_line(line)
-                
+
                 elif current_table:
                     self._parse_column_line(line, current_table, tables)
         # Remove keys with empty lists
@@ -190,9 +190,9 @@ class DrawioGenerator:
             tables[table_name] = updated_list
         else:
             raise ValueError(
-                f"Column '{column_name}' not found in table '{table_name} or {table_name} doesn't exist'."
+                f"Column '{column_name}' not found in table "
+                f"'{table_name} or {table_name} doesn't exist'."
             )
-
 
     def _parse_positions(self, line, positions, tables):
         positions_re = re.compile(r"^ARRANGE (\w+)\s*\(\s*(-?\d+),\s*(-?\d+)\s*\)$")
@@ -279,7 +279,7 @@ class DrawioGenerator:
                 "as": "geometry",
             },
         )
-        self.table_sizes[table_name] = ((width, height * (len(columns) + 1)))
+        self.table_sizes[table_name] = (width, height * (len(columns) + 1))
         self._add_columns(root, table_id, columns, width, height)
         return root, width
 
@@ -430,7 +430,8 @@ class DrawioGenerator:
             return f"{table_name}-{idx}"
         except ValueError as err:
             raise ValueError(
-                f"Column '{column_name}' not found in table '{table_name} or {table_name} doesn't exist'."
+                f"Column '{column_name}' not found in table "
+                f"'{table_name} or {table_name} doesn't exist'."
             ) from err
 
     def _create_edges(self, root: ET.Element) -> ET.Element:

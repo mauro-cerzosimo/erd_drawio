@@ -33,3 +33,6 @@ select = ["E", "F", "B"]  # E = pycodestyle, F = pyflakes, B = bugbear
 
 [tool.black]
 line-length = 88
+
+[tool.poetry-plugin-postinstall]
+hook = "pre-commit install"

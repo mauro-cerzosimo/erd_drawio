@@ -1,7 +1,7 @@
 import os
 import logging
 from dotenv import load_dotenv
-from src.drawio_tools.drawio_generator import DrawioGenerator
+from drawio_tools.drawio_generator import DrawioGenerator
 
 load_dotenv()
 # Set up logging
@@ -13,18 +13,18 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     logging.info("Loading environment variables...")
-    
 
     file_name = os.environ.get("INPUT_FILE_NAME_PATH")
     output_file_name = os.environ.get("OUTPUT_FILE_NAME")
 
     if not file_name or not output_file_name:
         logging.error(
-            "Environment variables INPUT_FILE_NAME_PATH or OUTPUT_FILE_NAME are missing."
+            "Environment variables INPUT_FILE_NAME_PATH "
+            "or OUTPUT_FILE_NAME are missing."
         )
         exit(1)
 
-    path_file_name=os.path.join("input", file_name)
+    path_file_name = os.path.join("input", file_name)
     logging.info("Starting drawio generation...")
     logging.info("Input DSL file: ./input/%s", path_file_name)
     logging.info("Output Drawio file: ./output/%s", output_file_name)
