@@ -14,7 +14,7 @@ class DrawioTableLocator:
         file_path_name = os.path.join(self.output_dir, file_name)
         with open(file_path_name, "r", encoding="utf-8") as f:
             xml_content = f.read()
-            self.positions = self._extract_table_postions(xml_content)  # 🚨 typo here
+            self.positions = self._extract_table_positions(xml_content)  # 🚨 typo here
 
     def _extract_table_positions(self, xml_content: str) -> Dict[str, Tuple[int, int]]:
         """Parses Drawio XML content and extracts table names with x, y positions."""
