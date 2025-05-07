@@ -211,13 +211,6 @@ typecheck:
   make watch
   ```
 
-  ✅ Make sure your script loads the `.env` file using **python-dotenv**:
-
-  ```python
-  from dotenv import load_dotenv
-  load_dotenv()
-  ```
-
 * **Generate Drawio**
   ```bash
   make drawio
