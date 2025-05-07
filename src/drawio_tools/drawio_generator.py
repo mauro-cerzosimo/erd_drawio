@@ -35,6 +35,7 @@ EDGES = [
 class DrawioGenerator:
     def __init__(self):
         self.output_dir = "output"
+        self.table_sizes = defaultdict(dict)
 
     def import_file(self, path_file_name: str):
         (
@@ -194,7 +195,7 @@ class DrawioGenerator:
 
 
     def _parse_positions(self, line, positions, tables):
-        positions_re = re.compile(r"^ARRANGE (\w+)\s*\(\s*(\d+),\s*(\d+)\s*\)$")
+        positions_re = re.compile(r"^ARRANGE (\w+)\s*\(\s*(-?\d+),\s*(-?\d+)\s*\)$")
         match = positions_re.match(line)
         if match:
             src_table, x, y = match.groups()
@@ -278,7 +279,7 @@ class DrawioGenerator:
                 "as": "geometry",
             },
         )
-
+        self.table_sizes[table_name] = ((width, height * (len(columns) + 1)))
         self._add_columns(root, table_id, columns, width, height)
         return root, width
 
@@ -288,7 +289,7 @@ class DrawioGenerator:
             row_id = f"{table_id}-{idx}"
             icon_id = f"{table_id}-icon-{idx}"
             col_id = f"{table_id}-col-{idx}"
-            fill_color = "#DADADA" if idx % 2 == 0 else "#ffffff"
+            fill_color = "#f0f0f0" if idx % 2 == 0 else "#ffffff"
 
             self._create_row(
                 root, row_id, table_id, fill_color, key, width, height, y_offset

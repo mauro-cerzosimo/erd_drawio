@@ -59,7 +59,9 @@ COLUMN_CEL_STYLE = {
 EDGE_STYLE = {
     "edgeStyle": "entityRelationEdgeStyle",
     "fontSize": "12",
+    # "strokeColor": "#B3B3B3",
     "html": "1",
+    "opacity": "30",
 }
 
 TITLE_STYLE = {
