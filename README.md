@@ -172,7 +172,6 @@ poetry run pre-commit run --all-files
 
 ## ⚡ Makefile for common tasks
 
-Add this `Makefile` to your project root:
 
 ```makefile
 .PHONY: watch drawio arrange lint format typecheck
