@@ -86,18 +86,18 @@ The `.dsl` file defines your data model and should follow these conventions:
 
   ```dsl
   TABLE FACT_ORDERS {
-      *ORDER_ID
-      +PRODUCT_ID
+      ORDER_ID *
+      PRODUCT_ID +
       CUSTOMER_ID
   }
 
   TABLE DIM_PRODUCTS {
-      *PRODUCT_ID
+      PRODUCT_ID *
       PRODUCT_NAME
   }
 
   TABLE DIM_CUSTOMERS {
-      *CUSTOMER_ID
+      CUSTOMER_ID *
       CUSTOMER_NAME
   }
   ```
@@ -172,7 +172,6 @@ poetry run pre-commit run --all-files
 
 ## ⚡ Makefile for common tasks
 
-Add this `Makefile` to your project root:
 
 ```makefile
 .PHONY: watch drawio arrange lint format typecheck
@@ -210,13 +209,6 @@ typecheck:
 
   ```bash
   make watch
-  ```
-
-  ✅ Make sure your script loads the `.env` file using **python-dotenv**:
-
-  ```python
-  from dotenv import load_dotenv
-  load_dotenv()
   ```
 
 * **Generate Drawio**
