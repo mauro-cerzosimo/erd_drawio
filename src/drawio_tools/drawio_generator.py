@@ -2,9 +2,8 @@ import os
 import xml.etree.ElementTree as ET
 import uuid
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Match, Optional
 import re
-from typing import Optional
 import logging
 from datetime import date
 from drawio_tools.styles import (
@@ -35,9 +34,9 @@ EDGES = [
 class DrawioGenerator:
     def __init__(self) -> None:
         self.output_dir = "output"
-        self.table_sizes = defaultdict(dict)
+        self.table_sizes: Dict[str, Tuple[int, int]] = defaultdict(lambda: (0, 0))
 
-    def import_file(self, path_file_name: str):
+    def import_file(self, path_file_name: str) -> None:
         (
             self.tables,
             self.references,
@@ -50,15 +49,17 @@ class DrawioGenerator:
     def _parse_dsl_file(self, path_file_name: str) -> Tuple[
         Dict[str, List[Tuple[str, str]]],
         Dict[str, List[Dict[str, str]]],
-        Dict[str, Tuple[Optional[int], Optional[int]]],
+        Dict[str, Tuple[int, int]],
+        str,
+        str,
     ]:
-        tables = defaultdict(list)
-        references = defaultdict(list)
-        positions = {}
-        title = None
-        created_at = None
+        tables: Dict[str, List[Tuple[str, str]]] = defaultdict(list)
+        references: Dict[str, List[Dict[str, str]]] = defaultdict(list)
+        positions: Dict[str, Tuple[int, int]] = {}
+        title: str = ""
+        created_at: str = ""
 
-        current_table = None
+        current_table: Optional[str] = None
 
         with open(path_file_name) as file:
             for line in file:
@@ -70,7 +71,7 @@ class DrawioGenerator:
                 if self._is_reference_line(line):
                     self._parse_reference_line(line, tables, references)
                 elif self._is_position_line(line):
-                    self._parse_positions(line, positions, tables)
+                    self._parse_positions(line, positions)
                 elif self._is_title_line(line):
                     title = self._parse_title(line)
                 elif self._is_create_date(line):
@@ -87,10 +88,10 @@ class DrawioGenerator:
             logger.warning(f"Removed Table {keys_to_remove} because without columns")
         return tables, references, positions, title, created_at
 
-    def _is_title_line(self, line):
+    def _is_title_line(self, line: str) -> bool:
         return line.startswith("TITLE")
 
-    def _is_create_date(self, line):
+    def _is_create_date(self, line: str) -> bool:
         return line.startswith("CREATEDAT")
 
     def _is_table_line(self, line: str) -> bool:
@@ -102,37 +103,38 @@ class DrawioGenerator:
     def _is_position_line(self, line: str) -> bool:
         return line.startswith("ARRANGE")
 
-    def _parse_title(self, line):
+    def _parse_title(self, line: str) -> str:
         match = re.match(r"TITLE\s+(.*)", line)
         if match:
             title_name = match.group(1).strip()
             return title_name
         else:
             logger.warning("No TITLE found in line")
-            return None
+            return ""
 
-    def _parse_create_date(self, line):
+    def _parse_create_date(self, line: str) -> str:
         match = re.match(r"CREATEDAT\s+(.*)", line)
         if match:
             created_at = match.group(1).strip()
             return created_at
         else:
             logger.warning("No CREATEDAT found in line")
-            return None
+            return ""
 
-    def _parse_table_line(
-        self, line: str
-    ) -> Tuple[str, Tuple[Optional[int], Optional[int]]]:
+    def _parse_table_line(self, line: str) -> str:
         match = re.match(r"^TABLE (\w+)(?:\s*)?", line)
-        table_name = match.group(1)
-        return table_name
+        if match:
+            table_name = match.group(1)
+            return table_name
+        else:
+            raise ValueError(f"No TABLE found in line: {line}")
 
     def _parse_column_line(
         self,
         line: str,
         current_table: str,
         tables: Dict[str, List[Tuple[str, str]]],
-    ):
+    ) -> None:
         if m := re.match(r"^(\w+)\s*\*$", line):
             self._add_primary_key(m, current_table, tables)
         elif m := re.match(r"^(\w+)\s*\+$", line):
@@ -140,19 +142,30 @@ class DrawioGenerator:
         elif m := re.match(r"^(\w+)$", line):
             self._add_regular_column(m, current_table, tables)
 
-    def _add_primary_key(self, match, table: str, tables):
+    def _add_primary_key(
+        self, match: Match, table: str, tables: Dict[str, List[Tuple[str, str]]]
+    ) -> None:
         col = match.group(1)
         tables[table].append((col, "PK"))
 
-    def _add_foreign_key(self, match, table: str, tables):
+    def _add_foreign_key(
+        self, match: Match, table: str, tables: Dict[str, List[Tuple[str, str]]]
+    ) -> None:
         col = match.group(1)
         tables[table].append((col, "FK"))
 
-    def _add_regular_column(self, match, table: str, tables):
+    def _add_regular_column(
+        self, match: Match, table: str, tables: Dict[str, List[Tuple[str, str]]]
+    ) -> None:
         col = match.group(1)
         tables[table].append((col, ""))
 
-    def _parse_reference_line(self, line, tables, references):
+    def _parse_reference_line(
+        self,
+        line: str,
+        tables: Dict[str, List[Tuple[str, str]]],
+        references: Dict[str, List[Dict[str, str]]],
+    ) -> None:
         # Compile regex
         reference_re = re.compile(
             r"^REFERENCE (\w+)\.(\w+)\s*->\s*(\w+)\.(\w+)(?:\s*\[(\w+),\s*(\w+)\])?$"
@@ -176,7 +189,12 @@ class DrawioGenerator:
         else:
             raise ValueError(f"line could not be parsed → {line}")
 
-    def _add_reference_foreign_key(self, table_name, column_name, tables):
+    def _add_reference_foreign_key(
+        self,
+        table_name: str,
+        column_name: str,
+        tables: Dict[str, List[Tuple[str, str]]],
+    ) -> None:
         # Check if OPPORTUNITY_ID exists in reference_list
 
         has_column = any(col == column_name for col, _ in tables[table_name])
@@ -194,12 +212,17 @@ class DrawioGenerator:
                 f"'{table_name} or {table_name} doesn't exist'."
             )
 
-    def _parse_positions(self, line, positions, tables):
+    def _parse_positions(
+        self, line: str, positions: Dict[str, Tuple[int, int]]
+    ) -> None:
         positions_re = re.compile(r"^ARRANGE (\w+)\s*\(\s*(-?\d+),\s*(-?\d+)\s*\)$")
         match = positions_re.match(line)
         if match:
             src_table, x, y = match.groups()
-            positions[src_table] = (x, y)
+            if x and y:
+                positions[src_table] = (int(x), int(y))
+            else:
+                raise ValueError(f"Warning: line could not be parsed → {line}")
         else:
             raise ValueError(f"Warning: line could not be parsed → {line}")
 
@@ -212,10 +235,19 @@ class DrawioGenerator:
         """Creates the root mxCell elements."""
         root = ET.Element("root")
         ET.SubElement(root, "mxCell", id="0")
-        ET.SubElement(root, "mxCell", id="1", parent="0")
+        ET.SubElement(root, "mxCell", attrib={"id": "1", "parent": "0"})
         return root
 
-    def _create_mxcell(self, root, id, value, style, parent, vertex, geom_attrs):
+    def _create_mxcell(
+        self,
+        root: ET.Element,
+        id: str,
+        value: str,
+        style: str,
+        parent: str,
+        vertex: str,
+        geom_attrs: dict,
+    ) -> None:
         """Helper to create mxCell with geometry."""
         cell = ET.SubElement(
             root,
@@ -230,7 +262,7 @@ class DrawioGenerator:
         )
         ET.SubElement(cell, "mxGeometry", geom_attrs)
 
-    def _create_erd_xml(self, root) -> ET.Element:
+    def _create_erd_xml(self, root: ET.Element) -> ET.Element:
         """Generates the ERD XML structure from tables."""
         x_offset = 1
         for table_name, columns in self.tables.items():
@@ -283,7 +315,14 @@ class DrawioGenerator:
         self._add_columns(root, table_id, columns, width, height)
         return root, width
 
-    def _add_columns(self, root, table_id, columns, width, height):
+    def _add_columns(
+        self,
+        root: ET.Element,
+        table_id: str,
+        columns: List[Tuple[str, str]],
+        width: int,
+        height: int,
+    ) -> None:
         y_offset = 30
         for idx, (col_name, key) in enumerate(columns, start=1):
             row_id = f"{table_id}-{idx}"
@@ -300,8 +339,16 @@ class DrawioGenerator:
             y_offset += height
 
     def _create_row(
-        self, root, row_id, parent_id, fill_color, key, width, height, y_offset
-    ):
+        self,
+        root: ET.Element,
+        row_id: str,
+        parent_id: str,
+        fill_color: str,
+        key: str,
+        width: int,
+        height: int,
+        y_offset: int,
+    ) -> None:
         row_style = ROW_STYLE.copy()
 
         row_style.update(
@@ -326,7 +373,9 @@ class DrawioGenerator:
             },
         )
 
-    def _create_icon_cell(self, root, icon_id, parent_id, key, height):
+    def _create_icon_cell(
+        self, root: ET.Element, icon_id: str, parent_id: str, key: str, height: int
+    ) -> None:
 
         icon_cell_style = ICON_CELL_STYLE.copy()
         icon_cell_style["fontStyle"] = "1" if key == "PK" else ""
@@ -342,8 +391,15 @@ class DrawioGenerator:
         )
 
     def _create_column_cell(
-        self, root, col_id, parent_id, col_name, key, width, height
-    ):
+        self,
+        root: ET.Element,
+        col_id: str,
+        parent_id: str,
+        col_name: str,
+        key: str,
+        width: int,
+        height: int,
+    ) -> None:
         column_cell_style = COLUMN_CEL_STYLE.copy()
         column_cell_style["fontStyle"] = "5" if key == "PK" else ""
 
@@ -363,7 +419,7 @@ class DrawioGenerator:
         )
 
     def _dict_to_style_string(self, style_dict: Dict[str, str]) -> str:
-        def camel_case(s):
+        def camel_case(s: str) -> str:
             parts = s.split("_")
             return parts[0] + "".join(p.capitalize() for p in parts[1:])
 
@@ -455,7 +511,7 @@ class DrawioGenerator:
 
     # ADD TITLE
 
-    def _add_title(self, root: ET.Element):
+    def _add_title(self, root: ET.Element) -> ET.Element:
 
         self._create_mxcell(
             root,
@@ -475,7 +531,7 @@ class DrawioGenerator:
         return root
 
     # ADD Date
-    def _add_date(self, root):
+    def _add_date(self, root: ET.Element) -> ET.Element:
         self._create_mxcell(
             root,
             id="table-date",
