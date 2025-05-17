@@ -1,4 +1,4 @@
-.PHONY: watch drawio arrange lint format typecheck
+.PHONY: watch drawio arrange lint format typecheck test
 
 # Watch for changes in input/ and output/ using watcher.py
 watch:
@@ -23,3 +23,7 @@ format:
 # Run mypy type checking
 typecheck:
 	poetry run mypy src
+
+test:
+	poetry run pytest --cov=src --cov-report=html
+	open htmlcov/index.html

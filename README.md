@@ -237,3 +237,9 @@ typecheck:
   ```bash
   make typecheck
   ```
+
+* **Run Unit Test Coverage**
+
+  ```bash
+  make test
+  ```
