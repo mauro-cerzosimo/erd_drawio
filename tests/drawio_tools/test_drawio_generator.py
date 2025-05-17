@@ -47,7 +47,7 @@ def mock_generator(tmp_path: pathlib.Path) -> DrawioGenerator:
 
 
 def test() -> None:
-    assert 1 == 1
+    assert 2 == 2
 
 
 def write_dsl_file(tmp_path: pathlib.Path, content: str) -> str:
