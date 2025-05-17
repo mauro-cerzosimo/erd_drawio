@@ -46,6 +46,10 @@ def mock_generator(tmp_path: pathlib.Path) -> DrawioGenerator:
     return generator
 
 
+def test() -> None:
+    assert 1 == 1
+
+
 def write_dsl_file(tmp_path: pathlib.Path, content: str) -> str:
     """Helper to write the DSL file and return its path."""
     dsl_file = tmp_path / "test.dsl"
